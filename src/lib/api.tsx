@@ -3,12 +3,12 @@
 
 import { extend } from 'umi-request';
 
-const aclssrRequest = extend({
+export const aclssrRequest = extend({
     prefix: "https://api.github.com/repos/ACL4SSR/ACL4SSR",
     timeout: 10000,
 });
 
-type ACL4SSRContentItem = {
+export type ACL4SSRContentItem = {
     name: string,
     path: string,
     sha: string,
@@ -26,6 +26,7 @@ type ACL4SSRContentItem = {
 };
 
 // 获取ACLSSR列表
-export async function getACLSSRList() {
+export async function getACLSSRList() : Promise<ACL4SSRContentItem[]>{
     return await aclssrRequest.get<ACL4SSRContentItem[]>("/contents/Clash/config?ref=master");
 }
+

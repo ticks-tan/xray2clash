@@ -6,6 +6,7 @@ export default defineConfig({
 	plugins: [
 		solidPlugin({
 			ssr: false,
+			hot: true,
 		}),
 	],
 	server: {

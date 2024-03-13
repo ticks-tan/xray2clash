@@ -1,12 +1,59 @@
-import type { Component } from "solid-js";
+import { onMount, type Component, createResource, createMemo } from "solid-js";
 
 import AppHeader from "~/components/header";
 import TextAreas from "~/components/text-areas";
 import { HorizontalDivider } from "~/components/divider";
 import { Refresh as RefreshIcon } from "~/components/icons";
 import Select from "./components/select";
+import { ACL4SSRContentItem, aclssrRequest, getACLSSRList } from "./lib/api";
+import request from "umi-request";
+import { cn } from "./lib/utils";
+
+async function testApi() {
+	const res = await getACLSSRList();
+	const f = res[0];
+	console.log(JSON.stringify(f, null, 2));
+	// console.log(`filename: ${f.name}`);
+	const file = await aclssrRequest.get<string>(f.download_url, {
+		prefix: "",
+	});
+	console.log(file);
+	// const regex = /[^;]ruleset=([^,]+),(.+)/g;
+	// let match: RegExpExecArray;
+	// console.log("-------------------------------");
+	// while ((match = regex.exec(file))) {
+	// 	console.log(`match-len: ${match.length}`);
+	// 	for (const m of match) {
+	// 		console.log(`match: ${m}`);
+	// 	}
+	// }
+	// console.log("-------------------------------");
+}
 
 const App: Component = () => {
+	const [templateData, { refetch }] = createResource(async () => {
+		const res = await getACLSSRList();
+		let map = new Map<string, ACL4SSRContentItem["_links"]>();
+		for (const it of res) {
+			map.set(it.name, it._links);
+		}
+		return map;
+	});
+	const templatePending = createMemo(() => templateData.state == "pending");
+	const templateSelects = createMemo(() => {
+		if (templateData()) {
+			let list: {
+				value: string;
+				text: string;
+			}[] = new Array();
+			templateData().forEach((_v, k) => {
+				list.push({ value: k, text: k });
+			});
+			return list;
+		}
+		return [];
+	});
+
 	return (
 		<>
 			{/* 顶部标题 */}
@@ -23,8 +70,21 @@ const App: Component = () => {
 				{/* 模板 */}
 				<div class='flex items-center'>
 					<p>模板选择：</p>
-					<Select idName='template-select' items={[]} />
-					<RefreshIcon className="ml-2 md:ml-4 cursor-pointer hover:text-primary"/>
+					<Select
+						className="w-fit"
+						idName='template-select'
+						items={templateSelects}
+						onItemSelect={(v) => {
+							console.log(v);
+						}}
+					/>
+					<RefreshIcon
+						className={cn(
+							"ml-2 md:ml-4 cursor-pointer hover:text-primary",
+							templatePending() ? "animate-spin" : "animate-none"
+						)}
+						onClick={refetch}
+					/>
 				</div>
 			</div>
 			{/* 分割线 */}

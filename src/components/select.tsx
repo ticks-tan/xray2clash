@@ -2,7 +2,7 @@
  * 下拉选择组件
  */
 
-import { Component, For } from "solid-js";
+import { Accessor, Component, For, createEffect } from "solid-js";
 
 import { cn } from "~/lib/utils";
 
@@ -14,7 +14,8 @@ export type SelectItem = {
 interface SelectProps {
 	idName: string,
 	placeHolder?: string,
-	items: SelectItem[],
+	items: Accessor<SelectItem[]>,
+	onItemSelect?: (val: string) => void,
     className?: string,
 }
 
@@ -22,13 +23,28 @@ const Select: Component<SelectProps> = ({
 	placeHolder,
 	idName,
 	items,
+	onItemSelect = (v) => {},
     className,
 }) => {
+	let input: HTMLInputElement;
+	let datalist : HTMLDataListElement;
+	
+	const onItemSelectCallback = (e: InputEvent) => {
+		const val = input.value;
+		const options = datalist.childNodes;
+		for (const opt of options) {
+			if (opt.textContent == val) {
+				onItemSelect(val);
+			}
+		}
+	}
+
 	return (
 		<div class={cn(className)}>
 
 			<div class='relative'>
 				<input
+					ref={input}
 					type='text'
 					list={idName}
 					name="selectName"
@@ -38,6 +54,7 @@ const Select: Component<SelectProps> = ({
 						"cursor-default text-center caret-transparent focus:border-primary"
 					)}
 					placeholder={placeHolder}
+					onInput={onItemSelectCallback}
 				/>
 
 				<span class='absolute inset-y-0 right-0 flex w-8 items-center'>
@@ -58,8 +75,8 @@ const Select: Component<SelectProps> = ({
 				</span>
 			</div>
 
-			<datalist id={idName}>
-				<For each={items}>
+			<datalist id={idName} ref={datalist}>
+				<For each={items()}>
 					{it => <option value={it.value}>{it.text}</option>}
 				</For>
 			</datalist>
